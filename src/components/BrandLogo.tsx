@@ -171,44 +171,54 @@ export function LivingWaveformBar({
   active = true,
   bars = 24,
   className = "",
+  bins,
 }: {
   active?: boolean;
   bars?: number;
   className?: string;
+  bins?: number[];
 }) {
   const shouldReduceMotion = useReducedMotion();
+  const live = Boolean(bins && bins.length > 0);
 
   return (
     <div
-      className={`flex items-center justify-center gap-1 ${className}`}
+      className={`flex items-end justify-center gap-1 ${className}`}
       aria-hidden="true"
     >
       {Array.from({ length: bars }).map((_, idx) => {
         const seedHeight = 12 + ((idx * 17) % 28);
+        const liveValue = bins?.[idx % (bins?.length || 1)] ?? 0;
+        const liveHeight = Math.max(6, Math.round(6 + liveValue * 38));
         return (
           <motion.span
             key={idx}
-            className="w-1 rounded-full bg-gradient-to-t from-[#5B5BF0] to-[#22D3EE]"
-            style={{ height: `${seedHeight}px` }}
+            className="w-1 rounded-full bg-gradient-to-t from-[#5B5BF0] to-[#7EE7F3]"
             animate={
-              active && !shouldReduceMotion
-                ? {
-                    height: [
-                      `${seedHeight}px`,
-                      `${Math.max(8, 42 - seedHeight)}px`,
-                      `${Math.min(44, seedHeight + 14)}px`,
-                      `${seedHeight}px`,
-                    ],
-                    opacity: [0.55, 1, 0.75, 0.55],
-                  }
-                : { height: "8px", opacity: 0.35 }
+              live
+                ? { height: `${liveHeight}px`, opacity: 0.45 + liveValue * 0.55 }
+                : active && !shouldReduceMotion
+                  ? {
+                      height: [
+                        `${seedHeight}px`,
+                        `${Math.max(8, 42 - seedHeight)}px`,
+                        `${Math.min(44, seedHeight + 14)}px`,
+                        `${seedHeight}px`,
+                      ],
+                      opacity: [0.55, 1, 0.75, 0.55],
+                    }
+                  : { height: "8px", opacity: 0.35 }
             }
-            transition={{
-              duration: 1.5 + (idx % 5) * 0.22,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: idx * 0.04,
-            }}
+            transition={
+              live
+                ? { type: "spring", stiffness: 420, damping: 28 }
+                : {
+                    duration: 1.5 + (idx % 5) * 0.22,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: idx * 0.04,
+                  }
+            }
           />
         );
       })}
@@ -219,23 +229,28 @@ export function LivingWaveformBar({
 export function BrandFooter({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500 dark:text-zinc-400 ${className}`}
+      className={`flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#4E5668] ${className}`}
     >
       <div className="flex items-center gap-2.5">
-        <span className="font-serif-editorial italic text-base text-[#101626] dark:text-white">
+        <span className="font-serif-editorial italic text-base text-[#1C2230]">
           {BRAND.wordmark}
         </span>
-        <span className="text-zinc-300 dark:text-zinc-700">/</span>
+        <span className="text-[#B7B1A4]">/</span>
         <span>
           &copy; {BRAND.copyrightYear} {BRAND.name}. All rights reserved.
         </span>
       </div>
-      <div className="flex items-center gap-1.5 font-medium text-zinc-500 dark:text-zinc-400">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#22D3EE]" />
+      <div className="flex items-center gap-1.5 font-medium text-[#4E5668]">
+        <span className="h-1.5 w-1.5 rounded-full bg-[#1AA7BE]" />
         <span>Powered by</span>
-        <span className="font-semibold tracking-tight text-[#101626] dark:text-white">
+        <a
+          href={BRAND.poweredByUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold tracking-tight text-[#1C2230] underline-offset-4 hover:text-[#5B5BF0] hover:underline"
+        >
           {BRAND.poweredBy}
-        </span>
+        </a>
       </div>
     </div>
   );

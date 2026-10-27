@@ -15,6 +15,8 @@ import {
   CheckCircle2,
   SlidersHorizontal,
   ChevronDown,
+  AudioLines,
+  RefreshCw,
 } from "lucide-react";
 import {
   SUPPORTED_LANGUAGES,
@@ -26,6 +28,18 @@ import {
 import { useAuth } from "../client/AuthContext";
 import { apiFetch } from "../client/api";
 import { convertAudioBlobTo16kHzWavFile } from "../client/audioConverter";
+import {
+  createInputMeter,
+  extensionForMimeType,
+  getAudioInputStream,
+  listAudioInputDevices,
+  pickRecorderMimeType,
+  readStoredAudioInputDeviceId,
+  stopMediaStream,
+  storeAudioInputDeviceId,
+  type AudioInputDevice,
+  type InputMeter,
+} from "../client/audioCapture";
 import { LivingWaveformBar } from "./BrandLogo";
 import type { MeetingDetailPayload } from "../shared/types";
 
@@ -110,6 +124,85 @@ export function NewMeetingModal({
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const startMsRef = useRef<number>(0);
+  const streamRef = useRef<MediaStream | null>(null);
+  const meterRef = useRef<InputMeter | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  const [audioDevices, setAudioDevices] = useState<AudioInputDevice[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>(
+    () => readStoredAudioInputDeviceId() || ""
+  );
+  const [liveBins, setLiveBins] = useState<number[]>(() => Array(28).fill(0));
+  const [inputLevel, setInputLevel] = useState(0);
+  const [micReady, setMicReady] = useState(false);
+  const [loadingDevices, setLoadingDevices] = useState(false);
+
+  const tearDownAudioGraph = async () => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (meterRef.current) {
+      await meterRef.current.close();
+      meterRef.current = null;
+    }
+    stopMediaStream(streamRef.current);
+    streamRef.current = null;
+    setMicReady(false);
+    setInputLevel(0);
+    setLiveBins(Array(28).fill(0));
+  };
+
+  const refreshDeviceList = async () => {
+    const devices = await listAudioInputDevices();
+    setAudioDevices(devices);
+    setSelectedDeviceId((current) => {
+      if (current && devices.some((device) => device.deviceId === current)) {
+        return current;
+      }
+      const stored = readStoredAudioInputDeviceId();
+      if (stored && devices.some((device) => device.deviceId === stored)) {
+        return stored;
+      }
+      return devices[0]?.deviceId || "";
+    });
+    return devices;
+  };
+
+  const startPreviewStream = async (deviceId?: string) => {
+    setLoadingDevices(true);
+    try {
+      const stream = await getAudioInputStream(deviceId || selectedDeviceId || null);
+      stopMediaStream(streamRef.current);
+      if (meterRef.current) {
+        await meterRef.current.close();
+      }
+      streamRef.current = stream;
+      const meter = createInputMeter(stream);
+      meterRef.current = meter;
+      setMicReady(true);
+      await refreshDeviceList();
+
+      const loop = () => {
+        if (!meterRef.current) return;
+        const rms = meterRef.current.sampleRms();
+        setInputLevel(rms);
+        setLiveBins(meterRef.current.sampleBins(28));
+        rafRef.current = requestAnimationFrame(loop);
+      };
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(loop);
+    } catch (err) {
+      setMicReady(false);
+      setError(
+        err instanceof Error
+          ? `Microphone permission denied or unavailable: ${err.message}`
+          : "Could not access microphone."
+      );
+    } finally {
+      setLoadingDevices(false);
+    }
+  };
 
   useEffect(() => {
     if (open && user) {
@@ -127,6 +220,28 @@ export function NewMeetingModal({
   }, [open, user]);
 
   useEffect(() => {
+    if (!open || mode !== "record") {
+      if (recordingState !== "recording" && recordingState !== "paused") {
+        void tearDownAudioGraph();
+      }
+      return;
+    }
+    if (recordingState === "idle") {
+      void startPreviewStream(selectedDeviceId || undefined);
+    }
+
+    const onDeviceChange = () => {
+      void refreshDeviceList();
+    };
+    navigator.mediaDevices?.addEventListener?.("devicechange", onDeviceChange);
+    return () => {
+      navigator.mediaDevices?.removeEventListener?.("devicechange", onDeviceChange);
+    };
+    // Preview is restarted explicitly when the selected device changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, mode]);
+
+  useEffect(() => {
     return () => {
       if (timerRef.current) window.clearInterval(timerRef.current);
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
@@ -139,6 +254,7 @@ export function NewMeetingModal({
           // ignore
         }
       }
+      void tearDownAudioGraph();
     };
   }, []);
 
@@ -165,8 +281,27 @@ export function NewMeetingModal({
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      let stream = streamRef.current;
+      if (!stream || stream.getAudioTracks().every((track) => track.readyState !== "live")) {
+        await startPreviewStream(selectedDeviceId || undefined);
+        stream = streamRef.current;
+      }
+      if (!stream) {
+        setError("Could not access microphone.");
+        return;
+      }
+
+      const liveTrack = stream.getAudioTracks()[0];
+      if (!liveTrack || liveTrack.readyState !== "live") {
+        setError("The selected microphone is unavailable. Choose another input and try again.");
+        return;
+      }
+      liveTrack.enabled = true;
+
+      const mimeType = pickRecorderMimeType();
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 128000 })
+        : new MediaRecorder(stream);
       chunksRef.current = [];
       startMsRef.current = Date.now();
 
@@ -174,21 +309,21 @@ export function NewMeetingModal({
         if (ev.data.size > 0) chunksRef.current.push(ev.data);
       };
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
-        const file = new File([blob], `live-recording-${Date.now()}.webm`, {
-          type: blob.type || "audio/webm",
+        const blobType = recorder.mimeType || mimeType || "audio/webm";
+        const blob = new Blob(chunksRef.current, { type: blobType });
+        const extension = extensionForMimeType(blobType);
+        const file = new File([blob], `live-recording-${Date.now()}.${extension}`, {
+          type: blobType,
         });
         setAudioFile(file);
         if (!title.trim()) {
           setTitle(`Recorded Session · ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`);
         }
         setRecordingState("recorded");
-        stream.getTracks().forEach((track) => track.stop());
       };
-      recorder.start(500);
+      recorder.start(250);
       mediaRecorderRef.current = recorder;
 
-      // Also start free Browser Web Speech API live captioning if supported
       const SpeechRecognitionCtor =
         (window as unknown as { SpeechRecognition?: new () => unknown }).SpeechRecognition ||
         (window as unknown as { webkitSpeechRecognition?: new () => unknown })
@@ -205,23 +340,25 @@ export function NewMeetingModal({
             stop: () => void;
           };
           recognition.continuous = true;
-          recognition.interimResults = false;
+          recognition.interimResults = true;
           const langDef = getLanguageDefinition(spokenLanguage);
           recognition.lang = langDef ? langDef.bcp47 : "en-US";
           recognition.onresult = (event) => {
-            for (let i = event.resultIndex; i < event.results.length; i++) {
+            const lines: string[] = [];
+            for (let i = 0; i < event.results.length; i++) {
               const res = event.results[i];
-              if (res.isFinal && res[0]?.transcript?.trim()) {
+              if (res[0]?.transcript?.trim()) {
                 const elapsedSec = Math.max(
                   0,
                   Math.floor((Date.now() - startMsRef.current) / 1000)
                 );
                 const mm = String(Math.floor(elapsedSec / 60)).padStart(2, "0");
                 const ss = String(elapsedSec % 60).padStart(2, "0");
-                const line = `[${mm}:${ss}] Speaker 1: ${res[0].transcript.trim()}`;
-                setLiveSpeechLines((prev) => [...prev, line]);
+                const prefix = res.isFinal ? "" : "… ";
+                lines.push(`[${mm}:${ss}] Speaker 1: ${prefix}${res[0].transcript.trim()}`);
               }
             }
+            if (lines.length > 0) setLiveSpeechLines(lines);
           };
           recognition.start();
           speechRecRef.current = recognition;
@@ -272,8 +409,24 @@ export function NewMeetingModal({
       speechRecRef.current = null;
     }
     if (rec && rec.state !== "inactive") {
+      try {
+        if (rec.state === "recording") rec.requestData();
+      } catch {
+        // some browsers do not implement requestData
+      }
       rec.stop();
     }
+  };
+
+  const handleDeviceChange = async (deviceId: string) => {
+    setSelectedDeviceId(deviceId);
+    storeAudioInputDeviceId(deviceId);
+    if (recordingState === "recording" || recordingState === "paused") {
+      setError("Stop the current recording before switching microphones.");
+      return;
+    }
+    setError(null);
+    await startPreviewStream(deviceId);
   };
 
   const applySamplePreset = (key: string) => {
@@ -398,7 +551,7 @@ export function NewMeetingModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.96 }}
           transition={{ type: "spring", stiffness: 360, damping: 28 }}
-          className="relative z-10 w-full max-w-2xl rounded-[2rem] border border-[#101626]/10 bg-[#F7F6F2] p-6 sm:p-8 shadow-[0_24px_70px_rgba(16,22,38,0.28)] max-h-[92vh] overflow-y-auto dark:border-white/10 dark:bg-[#13192B]"
+          className="relative z-10 w-full max-w-2xl rounded-[2rem] memoir-panel p-6 sm:p-8 shadow-[0_24px_70px_rgba(28,34,48,0.22)] max-h-[92vh] overflow-y-auto"
         >
           {/* Studio Modal Header */}
           <div className="flex items-start justify-between gap-4">
@@ -414,7 +567,7 @@ export function NewMeetingModal({
               type="button"
               onClick={onClose}
               aria-label={t("app.close")}
-              className="rounded-full bg-white p-2 text-zinc-500 shadow-2xs hover:text-[#101626] dark:bg-white/10 dark:text-zinc-300 cursor-pointer"
+              className="rounded-full bg-[#E7DFD0] p-2 text-[#5A6274] hover:text-[#1C2230] cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -422,7 +575,7 @@ export function NewMeetingModal({
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-5">
             {/* Tactile Pill Mode Switcher */}
-            <div className="grid grid-cols-3 gap-1.5 rounded-full bg-white p-1.5 shadow-2xs border border-[#101626]/8 dark:bg-[#0B0F1A] dark:border-white/10">
+            <div className="grid grid-cols-3 gap-1.5 rounded-full bg-[#E7DFD0] p-1.5 border border-[#1C2230]/8">
               {(
                 [
                   { id: "record", icon: Mic, label: t("meetings.ingestionModeRecord") },
@@ -465,50 +618,97 @@ export function NewMeetingModal({
 
             {/* 1. Live Microphone Studio */}
             {mode === "record" && (
-              <div className="relative overflow-hidden rounded-3xl bg-[#101626] p-7 text-center text-white shadow-inner space-y-5">
-                <div className="flex items-center justify-between text-xs text-zinc-400">
-                  <span className="inline-flex items-center gap-1.5">
+              <div className="relative overflow-hidden rounded-3xl border border-[#1C2230]/10 bg-[#E7DFD0] p-6 text-[#1C2230] space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5A6274]">
                     <span
                       className={`h-2 w-2 rounded-full ${
                         recordingState === "recording"
-                          ? "bg-red-500 animate-ping"
-                          : "bg-[#22D3EE]"
+                          ? "bg-red-500 animate-pulse"
+                          : inputLevel > 0.012
+                            ? "bg-emerald-500"
+                            : "bg-[#C5BCAE]"
                       }`}
                     />
                     {recordingState === "recording"
-                      ? "Listening & transcribing live..."
+                      ? "Listening to the selected microphone"
                       : recordingState === "paused"
                         ? "Recording paused"
                         : recordingState === "recorded"
                           ? "Audio captured and ready"
-                          : "Ready to record in any language"}
+                          : micReady
+                            ? "Speak to test the input, then start recording"
+                            : "Allow microphone access to see input devices"}
                   </span>
-                  <span className="font-mono text-xs text-[#22D3EE]">16kHz PCM Studio</span>
+                  <span className="font-mono text-[11px] text-[#5A6274]">
+                    Level {Math.min(100, Math.round(inputLevel * 400))}%
+                  </span>
                 </div>
 
-                <div className="py-2 space-y-3">
-                  <div className="font-mono text-4xl font-bold tracking-wider text-white">
+                <div className="flex items-center gap-2">
+                  <AudioLines className="h-4 w-4 text-[#5B5BF0] shrink-0" />
+                  <select
+                    aria-label="Microphone input"
+                    value={selectedDeviceId}
+                    onChange={(e) => void handleDeviceChange(e.target.value)}
+                    disabled={recordingState === "recording" || recordingState === "paused"}
+                    className="memoir-field min-w-0 flex-1 rounded-xl px-3 py-2 text-xs font-medium"
+                  >
+                    {audioDevices.length === 0 && (
+                      <option value="">
+                        {loadingDevices ? "Looking for microphones..." : "No microphone found yet"}
+                      </option>
+                    )}
+                    {audioDevices.map((device) => (
+                      <option key={device.deviceId || device.label} value={device.deviceId}>
+                        {device.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => void startPreviewStream(selectedDeviceId || undefined)}
+                    disabled={recordingState === "recording" || recordingState === "paused"}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#1C2230]/12 bg-[#F4EEE3] px-3 py-2 text-[11px] font-semibold text-[#1C2230] hover:border-[#5B5BF0] disabled:opacity-50 cursor-pointer"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${loadingDevices ? "animate-spin" : ""}`} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+
+                <div className="py-1 space-y-3 text-center">
+                  <div className="font-mono text-4xl font-bold tracking-wider text-[#1C2230]">
                     {String(Math.floor(recordingSeconds / 60)).padStart(2, "0")}:
                     {String(recordingSeconds % 60).padStart(2, "0")}
                   </div>
                   <LivingWaveformBar
-                    active={recordingState === "recording"}
+                    active={micReady}
                     bars={28}
-                    className="h-11"
+                    bins={liveBins}
+                    className="h-12"
                   />
+                  {micReady && inputLevel < 0.01 && recordingState !== "recorded" && (
+                    <p className="text-[11px] text-amber-800">
+                      No signal from this microphone. Try another input in the list, unmute the device, or check Windows sound settings.
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-center gap-3">
-                  {recordingState === "idle" && (
+                  {(recordingState === "idle" || recordingState === "recorded") && (
                     <motion.button
                       type="button"
                       whileHover={{ scale: 1.04 }}
                       whileTap={{ scale: 0.96 }}
                       onClick={startLiveRecording}
-                      className="inline-flex items-center gap-2.5 rounded-full bg-gradient-to-r from-[#5B5BF0] to-[#22D3EE] px-7 py-3 text-xs font-bold text-[#101626] shadow-[0_0_30px_rgba(34,211,238,0.4)] cursor-pointer"
+                      className="inline-flex items-center gap-2.5 rounded-full bg-[#5B5BF0] px-7 py-3 text-xs font-bold text-white shadow-[0_8px_20px_rgba(91,91,240,0.28)] cursor-pointer"
                     >
                       <Mic className="h-4 w-4" />
-                      <span>{t("meetings.startRecording")}</span>
+                      <span>
+                        {recordingState === "recorded"
+                          ? "Record again"
+                          : t("meetings.startRecording")}
+                      </span>
                     </motion.button>
                   )}
 
@@ -517,7 +717,7 @@ export function NewMeetingModal({
                       <button
                         type="button"
                         onClick={pauseOrResumeRecording}
-                        className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-xs font-semibold text-white hover:bg-white/20 cursor-pointer"
+                        className="inline-flex items-center gap-2 rounded-full border border-[#1C2230]/15 bg-[#F4EEE3] px-5 py-2.5 text-xs font-semibold text-[#1C2230] hover:border-[#5B5BF0] cursor-pointer"
                       >
                         {recordingState === "recording" ? (
                           <>
@@ -535,7 +735,7 @@ export function NewMeetingModal({
                       <button
                         type="button"
                         onClick={stopLiveRecording}
-                        className="inline-flex items-center gap-2 rounded-full bg-red-500 px-5 py-2.5 text-xs font-semibold text-white hover:bg-red-600 cursor-pointer"
+                        className="inline-flex items-center gap-2 rounded-full bg-[#C23B3B] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#A72F2F] cursor-pointer"
                       >
                         <Square className="h-3.5 w-3.5" />
                         <span>{t("meetings.stopRecording")}</span>
@@ -545,7 +745,7 @@ export function NewMeetingModal({
                 </div>
 
                 {liveSpeechLines.length > 0 && (
-                  <div className="rounded-2xl border border-white/10 bg-black/30 p-3 text-left font-mono text-[11px] text-zinc-200 max-h-28 overflow-y-auto">
+                  <div className="rounded-2xl border border-[#1C2230]/10 bg-[#F4EEE3] p-3 text-left font-mono text-[11px] text-[#1C2230] max-h-28 overflow-y-auto">
                     {liveSpeechLines.map((line, i) => (
                       <div key={i}>{line}</div>
                     ))}
@@ -553,11 +753,13 @@ export function NewMeetingModal({
                 )}
 
                 {recordingState === "recorded" && audioFile && (
-                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-4 py-1.5 text-xs font-semibold text-emerald-300">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>
-                      Captured {audioFile.name} ({Math.round(audioFile.size / 1024)} KB)
-                    </span>
+                  <div className="flex justify-center">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-emerald-800">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>
+                        Captured {audioFile.name} ({Math.round(audioFile.size / 1024)} KB)
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -637,7 +839,7 @@ export function NewMeetingModal({
                   value={rawTranscript}
                   onChange={(e) => setRawTranscript(e.target.value)}
                   placeholder={t("meetings.transcriptPastePlaceholder")}
-                  className="w-full rounded-2xl border border-[#101626]/12 bg-white p-4 font-mono text-xs text-[#101626] focus:border-[#5B5BF0] focus:outline-none dark:border-white/15 dark:bg-[#0B0F1A] dark:text-zinc-100"
+                  className="memoir-field w-full rounded-2xl p-4 font-mono text-xs"
                 />
               </div>
             )}
@@ -654,7 +856,7 @@ export function NewMeetingModal({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder={t("meetings.meetingTitlePlaceholder")}
-                  className="w-full rounded-xl border border-[#101626]/12 bg-white px-3.5 py-2 text-xs font-medium text-[#101626] focus:border-[#5B5BF0] focus:outline-none dark:border-white/15 dark:bg-[#0B0F1A] dark:text-white"
+                  className="memoir-field w-full rounded-xl px-3.5 py-2 text-xs font-medium"
                 />
               </div>
 
@@ -665,7 +867,7 @@ export function NewMeetingModal({
                 <select
                   value={spokenLanguage}
                   onChange={(e) => setSpokenLanguage(e.target.value)}
-                  className="w-full rounded-xl border border-[#101626]/12 bg-white px-3 py-2 text-xs font-medium text-[#101626] dark:border-white/15 dark:bg-[#0B0F1A] dark:text-white"
+                  className="memoir-field w-full rounded-xl px-3 py-2 text-xs font-medium"
                 >
                   <option value="auto">{t("app.autoDetect")}</option>
                   {SUPPORTED_LANGUAGES.map((lang) => (
@@ -687,7 +889,7 @@ export function NewMeetingModal({
                     setSummaryLanguage(e.target.value);
                     setInsightsLanguage(e.target.value);
                   }}
-                  className="w-full rounded-xl border border-[#101626]/12 bg-white px-3 py-2 text-xs font-medium text-[#101626] dark:border-white/15 dark:bg-[#0B0F1A] dark:text-white"
+                  className="memoir-field w-full rounded-xl px-3 py-2 text-xs font-medium"
                 >
                   {SUPPORTED_LANGUAGES.map((lang) => (
                     <option key={lang.tag} value={lang.tag}>

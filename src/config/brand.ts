@@ -4,6 +4,7 @@ export interface BrandConfig {
   slogan: string;
   taglineKey: string;
   poweredBy: string;
+  poweredByUrl: string;
   copyrightYear: number;
   supportEmail: string;
   defaultLocale: string;
@@ -30,6 +31,7 @@ export const BRAND: BrandConfig = {
   slogan: "Every conversation, remembered.",
   taglineKey: "app.tagline",
   poweredBy: "PHNX Codeworks",
+  poweredByUrl: "https://phnxcodeworks.com",
   copyrightYear: new Date().getFullYear(),
   supportEmail: "support@memoir.workspace",
   defaultLocale: "en",

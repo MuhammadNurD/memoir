@@ -201,7 +201,7 @@ export function DashboardPage({
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="rounded-[2rem] border border-[#101626]/10 bg-white p-10 sm:p-14 text-center space-y-6 shadow-[0_12px_40px_rgba(16,22,38,0.04)] dark:border-white/10 dark:bg-[#13192B]"
+          className="rounded-[2rem] memoir-panel p-10 sm:p-14 text-center space-y-6 shadow-[0_12px_40px_rgba(28,34,48,0.05)]"
         >
           <LivingWaveformBar bars={22} className="h-10 mx-auto" />
           <div className="max-w-lg mx-auto space-y-2">
@@ -266,7 +266,7 @@ export function DashboardPage({
                   transition={{ delay: idx * 0.05, duration: 0.25 }}
                   whileHover={shouldReduceMotion ? undefined : { x: 4 }}
                   onClick={() => navigate(`/meetings/${m.id}`)}
-                  className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#101626]/8 bg-white p-5 shadow-[0_4px_20px_rgba(16,22,38,0.03)] hover:border-[#5B5BF0]/40 transition-all cursor-pointer dark:border-white/10 dark:bg-[#13192B]"
+                  className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl memoir-panel p-5 shadow-[0_4px_20px_rgba(28,34,48,0.04)] hover:border-[#5B5BF0]/40 transition-all cursor-pointer"
                 >
                   <div className="space-y-1.5 min-w-0">
                     <div className="flex items-center gap-2.5 text-[11px] font-mono text-zinc-400">
@@ -320,7 +320,7 @@ export function DashboardPage({
               </span>
             </div>
 
-            <div className="rounded-3xl border border-[#101626]/8 bg-white p-5 shadow-[0_4px_20px_rgba(16,22,38,0.03)] dark:border-white/10 dark:bg-[#13192B]">
+            <div className="rounded-3xl memoir-panel p-5 shadow-[0_4px_20px_rgba(28,34,48,0.04)]">
               {!data?.openActionItems.length ? (
                 <div className="py-10 text-center text-xs text-zinc-500">
                   <CheckCircle2 className="mx-auto h-7 w-7 text-emerald-500 mb-2" />

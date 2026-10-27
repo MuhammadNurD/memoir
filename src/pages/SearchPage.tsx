@@ -157,7 +157,7 @@ export function SearchPage() {
           {t("app.loading")}
         </div>
       ) : searchedOnce && results.length === 0 ? (
-        <div className="rounded-[2rem] border border-[#101626]/10 bg-white p-12 text-center text-sm text-zinc-500 dark:border-white/10 dark:bg-[#13192B]">
+        <div className="rounded-[2rem] memoir-panel p-12 text-center text-sm text-[#5A6274]">
           {t("search.noResults", { query })}
         </div>
       ) : results.length > 0 ? (
@@ -173,7 +173,7 @@ export function SearchPage() {
                 initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.03, duration: 0.22 }}
-                className="rounded-2xl border border-[#101626]/8 bg-white p-5 space-y-3 shadow-[0_4px_20px_rgba(16,22,38,0.03)] dark:border-white/10 dark:bg-[#13192B]"
+                className="rounded-2xl memoir-panel p-5 space-y-3 shadow-[0_4px_20px_rgba(28,34,48,0.04)]"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">

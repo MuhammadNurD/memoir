@@ -141,7 +141,7 @@ export function SettingsPage() {
       {/* 1. Language & Studio Preferences */}
       <form
         onSubmit={handleSavePreferences}
-        className="rounded-[2rem] border border-[#101626]/10 bg-white p-7 space-y-5 shadow-[0_8px_30px_rgba(16,22,38,0.03)] dark:border-white/10 dark:bg-[#13192B]"
+        className="rounded-[2rem] memoir-panel p-7 space-y-5 shadow-[0_8px_30px_rgba(28,34,48,0.04)]"
       >
         <div className="flex items-center gap-2.5 border-b border-[#101626]/10 pb-4 dark:border-white/10">
           <Globe className="h-5 w-5 text-[#5B5BF0]" />
@@ -275,7 +275,7 @@ export function SettingsPage() {
       </form>
 
       {/* 2. Authentication & Linked Identities */}
-      <div className="rounded-[2rem] border border-[#101626]/10 bg-white p-7 space-y-5 shadow-[0_8px_30px_rgba(16,22,38,0.03)] dark:border-white/10 dark:bg-[#13192B]">
+      <div className="rounded-[2rem] memoir-panel p-7 space-y-5 shadow-[0_8px_30px_rgba(28,34,48,0.04)]">
         <div className="flex items-center gap-2.5 border-b border-[#101626]/10 pb-4 dark:border-white/10">
           <ShieldCheck className="h-5 w-5 text-[#5B5BF0]" />
           <div>
@@ -362,7 +362,7 @@ export function SettingsPage() {
       </div>
 
       {/* 3. Studio Transcription Engines */}
-      <div className="rounded-[2rem] border border-[#101626]/10 bg-white p-7 space-y-5 shadow-[0_8px_30px_rgba(16,22,38,0.03)] dark:border-white/10 dark:bg-[#13192B]">
+      <div className="rounded-[2rem] memoir-panel p-7 space-y-5 shadow-[0_8px_30px_rgba(28,34,48,0.04)]">
         <div className="flex items-center gap-2.5 border-b border-[#101626]/10 pb-4 dark:border-white/10">
           <Cpu className="h-5 w-5 text-[#5B5BF0]" />
           <h2 className="font-serif-editorial text-2xl text-[#101626] dark:text-white">

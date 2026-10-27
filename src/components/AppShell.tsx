@@ -64,11 +64,11 @@ export function AppShell({
   };
 
   return (
-    <div className="min-h-screen flex flex-col memoir-paper-surface text-[#101626] dark:text-[#F4F3EF]">
+    <div className="min-h-screen flex flex-col memoir-paper-surface text-[#1C2230]">
       {/* Floating Editorial Studio Bar */}
       <header className="sticky top-0 z-40 px-4 pt-4 pb-2 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#101626]/10 bg-white/85 px-4 py-2.5 shadow-[0_8px_30px_rgb(16,22,38,0.05)] backdrop-blur-xl dark:border-white/10 dark:bg-[#13192B]/85">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#1C2230]/10 bg-[#F4EEE3]/90 px-4 py-2.5 shadow-[0_8px_30px_rgb(28,34,48,0.06)] backdrop-blur-xl">
             {/* Brand Identity */}
             <div className="flex items-center gap-3">
               <button

@@ -351,7 +351,7 @@ export function MeetingDetailPage() {
       )}
 
       {/* Editorial Document Masthead */}
-      <div className="rounded-[2rem] border border-[#101626]/10 bg-white p-7 sm:p-9 shadow-[0_10px_35px_rgba(16,22,38,0.04)] space-y-5 dark:border-white/10 dark:bg-[#13192B]">
+      <div className="rounded-[2rem] memoir-panel p-7 sm:p-9 shadow-[0_10px_35px_rgba(28,34,48,0.05)] space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-zinc-400">
           <div className="flex flex-wrap items-center gap-2.5">
             <span>{formatLocaleDateTime(meeting.recordedAt, i18n.language)}</span>
@@ -400,14 +400,14 @@ export function MeetingDetailPage() {
 
         {/* Audio Studio Player Bar */}
         {audioAsset && (
-          <div className="rounded-2xl bg-[#101626] p-4 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="rounded-2xl border border-[#1C2230]/10 bg-[#E7DFD0] p-4 text-[#1C2230] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-2.5 text-xs font-medium">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#5B5BF0] text-white">
                 <Volume2 className="h-4 w-4" />
               </div>
               <div>
                 <div className="font-semibold">{audioAsset.fileName}</div>
-                <div className="text-[11px] text-zinc-400">
+                <div className="text-[11px] text-[#5A6274]">
                   {Math.round(audioAsset.sizeBytes / 1024)} KB · Click any transcript timestamp to jump
                 </div>
               </div>
@@ -449,7 +449,7 @@ export function MeetingDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left 7 Columns: Distilled Memoir, Decisions & Action Items */}
         <div className="lg:col-span-7 space-y-8">
-          <div className="rounded-[2rem] border border-[#101626]/10 bg-white p-7 sm:p-8 shadow-[0_8px_30px_rgba(16,22,38,0.03)] space-y-6 dark:border-white/10 dark:bg-[#13192B]">
+          <div className="rounded-[2rem] memoir-panel p-7 sm:p-8 shadow-[0_8px_30px_rgba(28,34,48,0.04)] space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#101626]/10 pb-5 dark:border-white/10">
               <div>
                 <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[#5B5BF0] dark:text-[#22D3EE]">
@@ -604,7 +604,7 @@ export function MeetingDetailPage() {
                   </div>
                 ) : (
                   <>
-                    <p className="text-sm sm:text-base leading-relaxed text-[#101626]/90 whitespace-pre-line dark:text-zinc-200">
+                    <p className="text-sm sm:text-base leading-relaxed text-[#1C2230] whitespace-pre-line">
                       {displayedSummary.executiveSummary}
                     </p>
 
@@ -613,7 +613,7 @@ export function MeetingDetailPage() {
                         <h3 className="font-serif-editorial text-2xl text-[#101626] dark:text-white">
                           {t("detail.keyDiscussionPoints")}
                         </h3>
-                        <ul className="space-y-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
+                        <ul className="space-y-2 text-xs sm:text-sm text-[#3D4454]">
                           {displayedSummary.keyDiscussionPoints.map((pt, i) => (
                             <li key={i} className="flex items-start gap-2.5">
                               <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#5B5BF0] shrink-0" />
@@ -629,7 +629,7 @@ export function MeetingDetailPage() {
                         <h3 className="font-serif-editorial text-2xl text-amber-700 dark:text-amber-300">
                           {t("detail.unresolvedQuestions")}
                         </h3>
-                        <ul className="space-y-2 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
+                        <ul className="space-y-2 text-xs sm:text-sm text-[#3D4454]">
                           {displayedSummary.unresolvedQuestions.map((q, i) => (
                             <li key={i} className="flex items-start gap-2.5">
                               <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
@@ -652,18 +652,18 @@ export function MeetingDetailPage() {
           {/* Decisions & Action Items Spread */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Decisions */}
-            <div className="rounded-[2rem] border border-[#101626]/10 bg-white p-6 space-y-4 dark:border-white/10 dark:bg-[#13192B]">
-              <h2 className="font-serif-editorial text-2xl text-[#101626] dark:text-white">
+            <div className="rounded-[2rem] memoir-panel p-6 space-y-4">
+              <h2 className="font-serif-editorial text-2xl text-[#1C2230]">
                 {t("detail.decisions")} ({decisions.length})
               </h2>
               {decisions.length === 0 ? (
-                <p className="text-xs text-zinc-400">No explicit decisions recorded yet.</p>
+                <p className="text-xs text-[#5A6274]">No explicit decisions recorded yet.</p>
               ) : (
                 <div className="space-y-3">
                   {decisions.map((d) => (
                     <div
                       key={d.id}
-                      className="rounded-2xl bg-[#F7F6F2] p-4 text-xs space-y-1.5 dark:bg-[#0B0F1A]"
+                      className="rounded-2xl bg-[#E7DFD0] p-4 text-xs space-y-1.5"
                     >
                       <div className="font-medium text-[#101626] leading-relaxed dark:text-zinc-100">
                         {d.decisionText}
@@ -679,8 +679,8 @@ export function MeetingDetailPage() {
             </div>
 
             {/* Action Items */}
-            <div className="rounded-[2rem] border border-[#101626]/10 bg-white p-6 space-y-4 dark:border-white/10 dark:bg-[#13192B]">
-              <h2 className="font-serif-editorial text-2xl text-[#101626] dark:text-white">
+            <div className="rounded-[2rem] memoir-panel p-6 space-y-4">
+              <h2 className="font-serif-editorial text-2xl text-[#1C2230]">
                 {t("detail.actionItems")} ({actionItems.length})
               </h2>
 
@@ -688,7 +688,7 @@ export function MeetingDetailPage() {
                 {actionItems.map((act) => (
                   <div
                     key={act.id}
-                    className="flex items-start justify-between gap-2.5 rounded-2xl bg-[#F7F6F2] p-3.5 text-xs dark:bg-[#0B0F1A]"
+                    className="flex items-start justify-between gap-2.5 rounded-2xl bg-[#E7DFD0] p-3.5 text-xs"
                   >
                     <div className="flex items-start gap-2.5 min-w-0">
                       <button
@@ -737,7 +737,7 @@ export function MeetingDetailPage() {
                   value={newActionTitle}
                   onChange={(e) => setNewActionTitle(e.target.value)}
                   placeholder={t("detail.addActionItem")}
-                  className="w-full rounded-xl border border-[#101626]/12 bg-[#F7F6F2] px-3 py-2 text-xs focus:bg-white focus:outline-none dark:border-white/15 dark:bg-[#0B0F1A]"
+                  className="memoir-field w-full rounded-xl px-3 py-2 text-xs"
                 />
                 <div className="flex gap-2">
                   <input
@@ -745,7 +745,7 @@ export function MeetingDetailPage() {
                     value={newActionOwner}
                     onChange={(e) => setNewActionOwner(e.target.value)}
                     placeholder={`${t("detail.owner")} (optional)`}
-                    className="flex-1 rounded-xl border border-[#101626]/12 bg-[#F7F6F2] px-3 py-1.5 text-xs focus:bg-white focus:outline-none dark:border-white/15 dark:bg-[#0B0F1A]"
+                    className="memoir-field flex-1 rounded-xl px-3 py-1.5 text-xs"
                   />
                   <button
                     type="submit"
@@ -762,7 +762,7 @@ export function MeetingDetailPage() {
 
         {/* Right 5 Columns: Verbatim Source Dialogue Script */}
         <div className="lg:col-span-5">
-          <div className="rounded-[2rem] border border-[#101626]/10 bg-white p-6 sm:p-7 shadow-[0_8px_30px_rgba(16,22,38,0.03)] space-y-4 dark:border-white/10 dark:bg-[#13192B]">
+          <div className="rounded-[2rem] memoir-panel p-6 sm:p-7 shadow-[0_8px_30px_rgba(28,34,48,0.04)] space-y-4">
             <div className="flex items-center justify-between border-b border-[#101626]/10 pb-4 dark:border-white/10">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">
@@ -786,14 +786,14 @@ export function MeetingDetailPage() {
                   value={transcriptFilter}
                   onChange={(e) => setTranscriptFilter(e.target.value)}
                   placeholder={t("detail.searchTranscript")}
-                  className="w-full rounded-xl border border-[#101626]/10 bg-[#F7F6F2] px-3.5 py-2 text-xs focus:bg-white focus:outline-none dark:border-white/10 dark:bg-[#0B0F1A]"
+                  className="memoir-field w-full rounded-xl px-3.5 py-2 text-xs"
                 />
 
                 <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
                   {filteredSegments.map((seg) => (
                     <div
                       key={seg.id}
-                      className="group rounded-2xl bg-[#F7F6F2]/80 p-4 text-xs space-y-1.5 hover:bg-[#EFECE6]/70 transition-colors dark:bg-[#0B0F1A]"
+                      className="group rounded-2xl bg-[#E7DFD0]/80 p-4 text-xs space-y-1.5 hover:bg-[#DDD4C4] transition-colors"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">

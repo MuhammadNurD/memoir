@@ -395,7 +395,7 @@ export function AuthPage() {
             transition={{ duration: 0.45, ease: "easeOut", delay: 0.05 }}
             className="lg:col-span-5"
           >
-            <div className="rounded-[2rem] border border-[#101626]/10 bg-white p-7 sm:p-9 shadow-[0_20px_50px_rgba(16,22,38,0.07)] dark:border-white/10 dark:bg-[#13192B]">
+            <div className="rounded-[2rem] memoir-panel p-7 sm:p-9 shadow-[0_20px_50px_rgba(28,34,48,0.07)]">
               <div className="space-y-1.5">
                 <h2 className="font-serif-editorial text-3xl tracking-tight text-[#101626] dark:text-white">
                   {mode === "signin"

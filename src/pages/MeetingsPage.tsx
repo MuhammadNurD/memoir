@@ -106,7 +106,7 @@ export function MeetingsPage({
       </div>
 
       {/* Floating Filter Ribbon */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 rounded-2xl border border-[#101626]/10 bg-white p-2.5 shadow-2xs dark:border-white/10 dark:bg-[#13192B]">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 rounded-2xl memoir-panel p-2.5">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3.5 top-2.5 h-4 w-4 text-zinc-400" />
           <input
@@ -153,7 +153,7 @@ export function MeetingsPage({
           {t("app.loading")}
         </div>
       ) : meetings.length === 0 ? (
-        <div className="rounded-[2rem] border border-[#101626]/10 bg-white p-12 text-center space-y-4 dark:border-white/10 dark:bg-[#13192B]">
+        <div className="rounded-[2rem] memoir-panel p-12 text-center space-y-4">
           <LivingWaveformBar bars={18} className="h-9 mx-auto" />
           <div className="font-serif-editorial text-3xl text-[#101626] dark:text-white">
             {t("dashboard.noMeetingsTitle")}
@@ -191,7 +191,7 @@ export function MeetingsPage({
               transition={{ delay: idx * 0.04, duration: 0.22 }}
               whileHover={shouldReduceMotion ? undefined : { x: 4 }}
               onClick={() => navigate(`/meetings/${m.id}`)}
-              className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-[#101626]/8 bg-white p-5 shadow-[0_4px_20px_rgba(16,22,38,0.03)] hover:border-[#5B5BF0]/45 transition-all cursor-pointer dark:border-white/10 dark:bg-[#13192B]"
+              className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl memoir-panel p-5 shadow-[0_4px_20px_rgba(28,34,48,0.04)] hover:border-[#5B5BF0]/45 transition-all cursor-pointer"
             >
               <div className="min-w-0 space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-mono text-zinc-400">
