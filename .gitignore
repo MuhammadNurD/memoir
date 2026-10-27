@@ -1,0 +1,12 @@
+node_modules
+dist
+.netlify
+.env
+.env.*
+!.env.example
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/uploads/*
+!data/uploads/.gitkeep
+coverage

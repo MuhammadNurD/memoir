@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --memoir-paper: #F7F6F2;
+    --memoir-cream: #EFECE6;
+    --memoir-ink: #101626;
+    --memoir-violet: #5B5BF0;
+    --memoir-cyan: #22D3EE;
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .font-serif-editorial {
+    font-family: "Instrument Serif", Georgia, Cambria, "Times New Roman", serif;
+  }
+
+  code, pre, .font-mono {
+    font-family: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+}
+
+/* Tactile paper grain overlay */
+.memoir-paper-surface {
+  background-color: #F7F6F2;
+  background-image: radial-gradient(rgba(91, 91, 240, 0.045) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.dark .memoir-paper-surface {
+  background-color: #0B0F1A;
+  background-image: radial-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 0);
+  background-size: 24px 24px;
+}

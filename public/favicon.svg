@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="memoir_bg" x1="10" y1="10" x2="110" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4A6CF7" />
+      <stop offset="52%" stop-color="#5B5BF0" />
+      <stop offset="100%" stop-color="#8B3DFF" />
+    </linearGradient>
+    <linearGradient id="memoir_page" x1="36" y1="26" x2="64" y2="86" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E0E7FF" />
+    </linearGradient>
+    <linearGradient id="memoir_wave" x1="58" y1="34" x2="96" y2="82" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#22D3EE" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded Violet/Indigo Squircle Badge -->
+  <rect width="120" height="120" rx="28" fill="url(#memoir_bg)" />
+
+  <!-- Back Book Pages -->
+  <path
+    d="M26 36C26 33.8 27.8 32 30 32H48V82H30C27.8 82 26 80.2 26 78V36Z"
+    stroke="#C7D2FE"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.85"
+  />
+  <path
+    d="M33 32V80C33 82 35 84 38 84H56"
+    stroke="#E0E7FF"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.9"
+  />
+
+  <!-- Main Open Memoir Page Morphing into Wave -->
+  <path
+    d="M40 27C48 27 57 31 61 36V76C57 71 48 68 40 68V27Z"
+    fill="url(#memoir_page)"
+  />
+  <path
+    d="M40 76C49 76 56 80 61 86C65 78 69 65 73 59"
+    stroke="#E0E7FF"
+    stroke-width="4.5"
+    stroke-linecap="round"
+  />
+
+  <!-- Soundwave Bars on the Right -->
+  <rect x="69" y="45" width="5" height="26" rx="2.5" fill="url(#memoir_wave)" />
+  <rect x="78" y="34" width="5.5" height="48" rx="2.75" fill="#FFFFFF" />
+  <rect x="87.5" y="43" width="5" height="30" rx="2.5" fill="url(#memoir_wave)" />
+  <rect x="96.5" y="51" width="4.5" height="14" rx="2.25" fill="#E0E7FF" />
+</svg>
